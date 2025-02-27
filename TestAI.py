@@ -1,14 +1,12 @@
 # %%
-import requests
 import os
-import json
 import speech_recognition as sr
 import pyttsx3  # For text-to-speech
-
+from google import genai
+from google.genai import types
 import dotenv
 
 dotenv.load_dotenv()
-
 
 # %%
 def transcribe_audio():
@@ -32,42 +30,47 @@ def transcribe_audio():
 
 
 # %%
-def generate_content_with_gemini(api_key, prompt):
-    """Generates content using the Gemini API."""
+def generate_content_with_gemini(prompt):
+    """Generates content using the Gemini API with streaming."""
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+    client = genai.Client(
+        api_key=os.environ.get("GEMINI_API_KEY"),
+    )
 
-    headers = {"Content-Type": "application/json"}
+    model = "gemini-2.0-flash-thinking-exp-01-21"  # or another suitable model
+    contents = [
+        types.Content(
+            role="user",
+            parts=[
+                types.Part.from_text(text=prompt),
+            ],
+        ),
+    ]
+    generate_content_config = types.GenerateContentConfig(
+        temperature=0.7,
+        top_p=0.95,
+        top_k=64,
+        max_output_tokens=65536,
+        response_mime_type="text/plain",
+        system_instruction=[
+            types.Part.from_text(
+                text="""I want you to give concise response, as I am using this agent as in live chat model. Give humanly response, no astericks and markdowns, you are my bestfriend to share all my rants with."""
+            ),
+        ],
+    )
 
-    data = {"contents": [{"parts": [{"text": prompt}]}]}
-
+    generated_text = ""
     try:
-        response = requests.post(url, headers=headers, data=json.dumps(data))
-        response.raise_for_status()
-        response_json = response.json()
+        for chunk in client.models.generate_content_stream(
+            model=model,
+            contents=contents,
+            config=generate_content_config,
+        ):
+            generated_text += chunk.text
+        return generated_text
 
-        if "candidates" in response_json and response_json["candidates"]:
-            if (
-                "content" in response_json["candidates"][0]
-                and "parts" in response_json["candidates"][0]["content"]
-            ):
-                generated_text = response_json["candidates"][0]["content"]["parts"][0][
-                    "text"
-                ]
-                return generated_text
-            else:
-                print("Error: 'content' or 'parts' not found in response.")
-                return None
-        else:
-            print("Error: 'candidates' not found in response.")
-            return None
-
-    except requests.exceptions.RequestException as e:
-        print(f"Request failed: {e}")
-        return None
-    except json.JSONDecodeError as e:
-        print(f"JSON decoding error: {e}")
-        print(f"Response text: {response.text}")
+    except Exception as e:  # Catch more general exceptions for robustness
+        print(f"Error generating content with Gemini: {e}")
         return None
 
 
@@ -82,24 +85,25 @@ def speak(text):
 # %%
 # Main execution
 if __name__ == "__main__":
-    
-    api_key = os.environ.get("API_KEY") # Replace with your API key
-    
-    # print(generate_content_with_gemini(api_key,"Who am I"))
+    # Ensure GEMINI_API_KEY is set as an environment variable
+    if "GEMINI_API_KEY" not in os.environ:
+        print("Error: GEMINI_API_KEY environment variable not set.")
+        print(
+            "Please set your Gemini API key as an environment variable named GEMINI_API_KEY."
+        )
+        exit()
 
     # 1. Get voice input:
     while True:
         voice_prompt = transcribe_audio()
-        
-        
 
         if voice_prompt:
-            
-            if 'goodbye' in voice_prompt:
+            if "goodbye" in voice_prompt.lower():  # make comparison case-insensitive
+                speak("Goodbye!")
                 break
-            
+
             # 2. Generate content using Gemini:
-            generated_text = generate_content_with_gemini(api_key, voice_prompt)
+            generated_text = generate_content_with_gemini(voice_prompt)
 
             if generated_text:
                 # 3. Output the generated text:
@@ -112,6 +116,3 @@ if __name__ == "__main__":
                 print("Failed to generate content.")
         else:
             print("No voice input received.")
-
-
-

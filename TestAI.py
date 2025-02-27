@@ -8,6 +8,7 @@ import dotenv
 
 dotenv.load_dotenv()
 
+
 # %%
 def transcribe_audio():
     """Transcribes audio from the microphone using SpeechRecognition."""
@@ -30,22 +31,27 @@ def transcribe_audio():
 
 
 # %%
-def generate_content_with_gemini(prompt):
-    """Generates content using the Gemini API with streaming."""
+def generate_content_with_gemini(conversation_history):
+    """Generates content using the Gemini API with streaming, now with conversation history."""
 
     client = genai.Client(
         api_key=os.environ.get("GEMINI_API_KEY"),
     )
 
     model = "gemini-2.0-flash-thinking-exp-01-21"  # or another suitable model
-    contents = [
-        types.Content(
-            role="user",
-            parts=[
-                types.Part.from_text(text=prompt),
-            ],
-        ),
-    ]
+
+    # Prepare content with conversation history
+    contents = []
+    for role, text in conversation_history:
+        contents.append(
+            types.Content(
+                role=role,
+                parts=[
+                    types.Part.from_text(text=text),
+                ],
+            )
+        )
+
     generate_content_config = types.GenerateContentConfig(
         temperature=0.7,
         top_p=0.95,
@@ -54,7 +60,7 @@ def generate_content_with_gemini(prompt):
         response_mime_type="text/plain",
         system_instruction=[
             types.Part.from_text(
-                text="""I want you to give concise response, as I am using this agent as in live chat model. Give humanly response, no astericks and markdowns, you are my bestfriend to share all my rants with."""
+                text="""I want you to give concise response, as I am using this agent as in live chat model. Give humanly response, no astericks and markdowns, you are my bestfriend to share all my rants with. Remember our conversation history and respond accordingly."""
             ),
         ],
     )
@@ -93,6 +99,8 @@ if __name__ == "__main__":
         )
         exit()
 
+    conversation_history = []  # Initialize conversation history
+
     # 1. Get voice input:
     while True:
         voice_prompt = transcribe_audio()
@@ -102,8 +110,11 @@ if __name__ == "__main__":
                 speak("Goodbye!")
                 break
 
-            # 2. Generate content using Gemini:
-            generated_text = generate_content_with_gemini(voice_prompt)
+            # Add user prompt to conversation history
+            conversation_history.append(("user", voice_prompt))
+
+            # 2. Generate content using Gemini with conversation history:
+            generated_text = generate_content_with_gemini(conversation_history)
 
             if generated_text:
                 # 3. Output the generated text:
@@ -112,6 +123,10 @@ if __name__ == "__main__":
 
                 # 4. Speak the generated text:
                 speak(generated_text)  # Use text-to-speech
+
+                # Add model response to conversation history
+                conversation_history.append(("model", generated_text))
+
             else:
                 print("Failed to generate content.")
         else:

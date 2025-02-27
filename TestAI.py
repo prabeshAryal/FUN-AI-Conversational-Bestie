@@ -106,7 +106,7 @@ if __name__ == "__main__":
         voice_prompt = transcribe_audio()
 
         if voice_prompt:
-            if "goodbye" in voice_prompt.lower():  # make comparison case-insensitive
+            if "goodbye" in voice_prompt.lower() or 'bye' in voice_prompt.lower(): 
                 speak("Goodbye!")
                 break
 

@@ -54,9 +54,9 @@ Follow these steps to get your own voice-controlled AI agent up and running!
 Once you have installed the requirements and set your API key, you can run the agent!
 
 1.  **Navigate to the Project Directory (if you closed your terminal).**
-2.  **Run the Python script:** Execute the main Python file (likely named `TestAI.py` or similar based on your description). Use the following command in your terminal:
+2.  **Run the Python script:** Execute the main Python file (likely named `MyAIBestie.py` or similar based on your description). Use the following command in your terminal:
     ```bash
-    python TestAI.py
+    python MyAIBestie.py
     ```
 
     The program should start, and you will see the message "Say something!" in your terminal.
@@ -82,7 +82,7 @@ The agent will remember the conversation history within a single run, so you can
 ## Configuration
 
 *   **Gemini API Key:**  As mentioned in the "Installation" section, ensure you have correctly set the `GEMINI_API_KEY` environment variable.
-*   **Model Selection (Advanced):** The code currently uses the `"gemini-2.0-flash-thinking-exp-01-21"` model. You can experiment with different Gemini models by changing this line in the `generate_content_with_gemini` function in `TestAI.py`.  Refer to the [Gemini API documentation](https://ai.google.dev/tutorials/python_quickstart) for available models and their capabilities.  For lower-powered laptops, you might want to try models that are optimized for speed and efficiency, but be aware that response quality might vary.
+*   **Model Selection (Advanced):** The code currently uses the `"gemini-2.0-flash-thinking-exp-01-21"` model. You can experiment with different Gemini models by changing this line in the `generate_content_with_gemini` function in `MyAIBestie.py`.  Refer to the [Gemini API documentation](https://ai.google.dev/tutorials/python_quickstart) for available models and their capabilities.  For lower-powered laptops, you might want to try models that are optimized for speed and efficiency, but be aware that response quality might vary.
 *   **Temperature and other parameters (Advanced):** The `generate_content_config` in the code allows for customization of the AI's response generation. You can adjust parameters like `temperature`, `top_p`, `top_k`, etc., to influence the creativity and randomness of the AI's replies.  Consult the Gemini API documentation for details on these parameters.
 
 ## Limitations and Considerations for Limited Memory Laptops
